@@ -19,7 +19,7 @@ public class DataPreprocessor {
 
 
         @Override
-        protected void map(LongWritable key, Text value, Context context) throws IOException, InterruptedException {
+        public void map(LongWritable key, Text value, Context context) throws IOException, InterruptedException {
             // input value: <userid>,<movieID>,<rating>
             // output key:  <userid>
             // output value: <movieID>:<rating>
@@ -37,7 +37,7 @@ public class DataPreprocessor {
 
     public static class DataPreprocessorReducer extends Reducer<IntWritable, Text, IntWritable, Text> {
         @Override
-        protected void reduce(IntWritable key, Iterable<Text> values, Context context) throws IOException, InterruptedException {
+        public void reduce(IntWritable key, Iterable<Text> values, Context context) throws IOException, InterruptedException {
             // input key: <userid>
             // input value: <movieID>:<rating>
             // output key:  <userid>
@@ -51,7 +51,7 @@ public class DataPreprocessor {
             String res = sb.toString();
             if (res == null || res.equals("")) return;
 
-            context.write(key, new Text(sb.toString().replaceFirst(",","")));
+            context.write(key, new Text(res.replaceFirst(",","")));
         }
     }
 

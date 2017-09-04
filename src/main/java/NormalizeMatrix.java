@@ -10,6 +10,8 @@ import org.apache.hadoop.mapreduce.lib.input.TextInputFormat;
 import org.apache.hadoop.mapreduce.lib.output.TextOutputFormat;
 
 import java.io.IOException;
+import java.util.HashMap;
+import java.util.Map;
 
 /**
  * Created by da on 9/3/17.
@@ -19,7 +21,7 @@ public class NormalizeMatrix {
 
 
         @Override
-        protected void map(LongWritable key, Text value, Context context) throws IOException, InterruptedException {
+        public void map(LongWritable key, Text value, Context context) throws IOException, InterruptedException {
             // input value: <movieID1>:<movieID2>/t<occurrence>
             // output key:  <movieID1>
             // output value: <movieID2>:<occurrence>
@@ -36,11 +38,30 @@ public class NormalizeMatrix {
 
     public static class NormalizeMatrixReducer extends Reducer<Text, Text, Text, Text> {
         @Override
-        protected void reduce(Text key, Iterable<Text> values, Context context) throws IOException, InterruptedException {
+        public void reduce(Text key, Iterable<Text> values, Context context) throws IOException, InterruptedException {
             // input key:  <movieID1>
             // input value: <movieID2>:<occurrence>
             // output key: <movieID2>
-            // output value: <movieID1>:<occurrence>/<occurenceSum>
+            // output value: <movieID1>= <(occurrence>/<occurenceSum)>
+            int occurenceSum = 0;
+            Map<String, Integer> res = new HashMap<String, Integer>();
+
+            // save the data to the map and calculate the sum
+            while(values.iterator().hasNext()) {
+                String[] movieOccurrence = values.iterator().next().toString().split(":");
+                int occurrence = Integer.parseInt(movieOccurrence[1]);
+                occurenceSum += occurrence;
+                res.put(movieOccurrence[0],occurrence);
+            }
+
+            // normalize
+            for (Map.Entry<String, Integer> entry: res.entrySet()) {
+                String outputKey = entry.getKey();
+                String outputValue = key.toString() + "=" + (double)entry.getValue()/occurenceSum;
+                context.write(new Text(outputKey), new Text(outputValue));
+            }
+
+
 
         }
     }
@@ -53,7 +74,7 @@ public class NormalizeMatrix {
         job.setMapperClass(NormalizeMatrixMapper.class);
         job.setReducerClass(NormalizeMatrixReducer.class);
 
-        job.setJarByClass(DataPreprocessor.class);
+        job.setJarByClass(NormalizeMatrixReducer.class);
 
         job.setInputFormatClass(TextInputFormat.class);
         job.setOutputFormatClass(TextOutputFormat.class);

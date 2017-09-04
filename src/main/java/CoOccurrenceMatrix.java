@@ -19,13 +19,13 @@ public class CoOccurrenceMatrix {
 
 
         @Override
-        protected void map(LongWritable key, Text value, Context context) throws IOException, InterruptedException {
+        public void map(LongWritable key, Text value, Context context) throws IOException, InterruptedException {
             // input value:  <userid>/t<movieID>:<rating>,<movieID>:<rating>...
             // output key:  <movieID1>:<movieID2>
             // output value: 1
 
             String line = value.toString().trim();
-            String[] userRating = line.split("/t");
+            String[] userRating = line.split("\t");
             String[] movieRatings = userRating[1].split(",");
 
             for (int i = 0; i < movieRatings.length; i++) {
@@ -45,7 +45,7 @@ public class CoOccurrenceMatrix {
 
     public static class CoOccurrenceMatrixGeneratorReducer extends Reducer<Text, IntWritable, Text, IntWritable> {
         @Override
-        protected void reduce(Text key, Iterable<IntWritable> values, Context context) throws IOException, InterruptedException {
+        public void reduce(Text key, Iterable<IntWritable> values, Context context) throws IOException, InterruptedException {
             //sum up
             int sum = 0;
             while(values.iterator().hasNext()) {
